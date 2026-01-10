@@ -1,0 +1,41 @@
+name: tests
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - '**.go'
+      - '**.mod'
+  pull_request:
+    paths:
+      - '**.go'
+      - '**.mod'
+  workflow_dispatch: {}
+
+jobs:
+  lint:
+    name: "Lint"
+    if: ${{ !endsWith(github.actor, '[bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: projectdiscovery/actions/setup/go@v1
+      - uses: projectdiscovery/actions/golangci-lint/v2@v1
+
+  tests:
+    name: "Tests"
+    needs: ["lint"]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: projectdiscovery/actions/setup/go@v1
+      - run: make
+
+  benchmarks:
+    name: "Benchmarks"
+    needs: ["tests"]
+    if: ${{ github.event_name != 'push' }}
+    uses: ./.github/workflows/benchmarks.yaml
