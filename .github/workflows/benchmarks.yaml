@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: projectdiscovery/actions/setup/go@v1
+        with:
+          go-version: "stable"
       - run: go install golang.org/x/perf/cmd/benchstat@latest
       - run: make bench
       - run: make bench

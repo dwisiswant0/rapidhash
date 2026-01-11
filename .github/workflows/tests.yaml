@@ -29,9 +29,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        go-version: [
+          "1.20", "1.21", "1.22",
+          "1.23", "1.24", "1.25",
+          "stable"
+        ]
     steps:
       - uses: actions/checkout@v6
       - uses: projectdiscovery/actions/setup/go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
       - run: make
 
   benchmarks:
