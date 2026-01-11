@@ -37,7 +37,7 @@ func BenchmarkComputes(b *testing.B) {
 		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
 			b.Run("Hash", func(b *testing.B) {
 				b.SetBytes(int64(size))
-				for b.Loop() {
+				for i := 0; i < b.N; i++ {
 					sink = rapidhash.Hash(data)
 				}
 			})
@@ -46,7 +46,7 @@ func BenchmarkComputes(b *testing.B) {
 				b.SetBytes(int64(size))
 
 				h := rapidhash.New()
-				for b.Loop() {
+				for i := 0; i < b.N; i++ {
 					h.Reset()
 					_, _ = h.Write(data)
 					sink = h.Sum64()
@@ -57,7 +57,7 @@ func BenchmarkComputes(b *testing.B) {
 				b.Run(fname, func(b *testing.B) {
 					b.SetBytes(int64(size))
 
-					for b.Loop() {
+					for i := 0; i < b.N; i++ {
 						sink = f(data)
 					}
 				})

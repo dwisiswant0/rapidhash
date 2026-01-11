@@ -11,7 +11,7 @@ func BenchmarkHasher1K_Chunked(b *testing.B) {
 	h := rapidhash.New()
 	b.SetBytes(1024)
 
-	for b.Loop() {
+	for i := 0; i < b.N; i++ {
 		h.Reset()
 		_, _ = h.Write(data[:256])
 		_, _ = h.Write(data[256:512])
