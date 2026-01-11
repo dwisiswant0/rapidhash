@@ -201,3 +201,66 @@ func TestHasherMatchesHash(t *testing.T) {
 		}
 	}
 }
+
+func TestHasherWriteString(t *testing.T) {
+	testStrings := []string{
+		"",
+		"a",
+		"hello",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 200)),
+	}
+
+	for _, s := range testStrings {
+		// WriteString should produce same result as Write([]byte(s))
+		h1 := rapidhash.New()
+		_, _ = h1.Write([]byte(s))
+
+		h2 := rapidhash.New()
+		_, _ = h2.WriteString(s)
+
+		if h1.Sum64() != h2.Sum64() {
+			t.Errorf("WriteString(%q) = 0x%x, Write([]byte) = 0x%x", s, h2.Sum64(), h1.Sum64())
+		}
+
+		// Should also match HashString
+		if h2.Sum64() != rapidhash.HashString(s) {
+			t.Errorf("WriteString(%q) = 0x%x, HashString = 0x%x", s, h2.Sum64(), rapidhash.HashString(s))
+		}
+	}
+}
+
+func TestHasherWriteStringChunked(t *testing.T) {
+	s := "The quick brown fox jumps over the lazy dog"
+	expected := rapidhash.HashString(s)
+
+	// Write in multiple string chunks
+	h := rapidhash.New()
+	_, _ = h.WriteString("The quick ")
+	_, _ = h.WriteString("brown fox ")
+	_, _ = h.WriteString("jumps over ")
+	_, _ = h.WriteString("the lazy dog")
+
+	if got := h.Sum64(); got != expected {
+		t.Errorf("WriteString chunked = 0x%x, want 0x%x", got, expected)
+	}
+}
+
+func TestHasherWriteStringMixed(t *testing.T) {
+	// Mix Write and WriteString calls
+	h1 := rapidhash.New()
+	_, _ = h1.Write([]byte("hello "))
+	_, _ = h1.WriteString("world")
+
+	h2 := rapidhash.New()
+	_, _ = h2.WriteString("hello ")
+	_, _ = h2.Write([]byte("world"))
+
+	h3 := rapidhash.New()
+	_, _ = h3.Write([]byte("hello world"))
+
+	if h1.Sum64() != h2.Sum64() || h2.Sum64() != h3.Sum64() {
+		t.Errorf("Mixed Write/WriteString produced different results: 0x%x, 0x%x, 0x%x",
+			h1.Sum64(), h2.Sum64(), h3.Sum64())
+	}
+}

@@ -401,3 +401,178 @@ func TestLengthVariation(t *testing.T) {
 		t.Error("Hash(ab) should not equal Hash(a) + Hash(b)")
 	}
 }
+
+// TestHashStringMatchesHash verifies that HashString produces identical output
+// to Hash([]byte(s)) for all string sizes.
+func TestHashStringMatchesHash(t *testing.T) {
+	testStrings := []string{
+		"",
+		"a",
+		"ab",
+		"abc",
+		"abcd",
+		"abcdefgh",
+		"abcdefghijklmnop",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 100)),
+		string(make([]byte, 200)),
+		string(make([]byte, 500)),
+		string(make([]byte, 1000)),
+	}
+
+	for _, s := range testStrings {
+		expected := rapidhash.Hash([]byte(s))
+		got := rapidhash.HashString(s)
+		if got != expected {
+			t.Errorf("HashString(%q) = 0x%x, want 0x%x (len=%d)", s, got, expected, len(s))
+		}
+	}
+}
+
+// TestHashStringWithSeedMatchesHashWithSeed verifies seeded string hashing.
+func TestHashStringWithSeedMatchesHashWithSeed(t *testing.T) {
+	testStrings := []string{
+		"",
+		"a",
+		"hello world",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 500)),
+	}
+	seeds := []uint64{0, 1, 12345, 0xdeadbeef, 0xffffffffffffffff}
+
+	for _, s := range testStrings {
+		for _, seed := range seeds {
+			expected := rapidhash.HashWithSeed([]byte(s), seed)
+			got := rapidhash.HashStringWithSeed(s, seed)
+			if got != expected {
+				t.Errorf("HashStringWithSeed(%q, %d) = 0x%x, want 0x%x", s, seed, got, expected)
+			}
+		}
+	}
+}
+
+// TestHashStringNanoMatchesHashNano verifies Nano variant string hashing.
+func TestHashStringNanoMatchesHashNano(t *testing.T) {
+	testStrings := []string{
+		"",
+		"a",
+		"ab",
+		"abc",
+		"abcdefgh",
+		"abcdefghijklmnop",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 100)),
+		string(make([]byte, 200)),
+	}
+
+	for _, s := range testStrings {
+		expected := rapidhash.HashNano([]byte(s))
+		got := rapidhash.HashStringNano(s)
+		if got != expected {
+			t.Errorf("HashStringNano(%q) = 0x%x, want 0x%x (len=%d)", s, got, expected, len(s))
+		}
+	}
+}
+
+// TestHashStringNanoWithSeedMatchesHashNanoWithSeed verifies seeded Nano variant.
+func TestHashStringNanoWithSeedMatchesHashNanoWithSeed(t *testing.T) {
+	testStrings := []string{
+		"",
+		"hello",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 200)),
+	}
+	seeds := []uint64{0, 1, 12345, 0xdeadbeef}
+
+	for _, s := range testStrings {
+		for _, seed := range seeds {
+			expected := rapidhash.HashNanoWithSeed([]byte(s), seed)
+			got := rapidhash.HashStringNanoWithSeed(s, seed)
+			if got != expected {
+				t.Errorf("HashStringNanoWithSeed(%q, %d) = 0x%x, want 0x%x", s, seed, got, expected)
+			}
+		}
+	}
+}
+
+// TestHashStringMicroMatchesHashMicro verifies Micro variant string hashing.
+func TestHashStringMicroMatchesHashMicro(t *testing.T) {
+	testStrings := []string{
+		"",
+		"a",
+		"ab",
+		"abc",
+		"abcdefgh",
+		"abcdefghijklmnop",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 100)),
+		string(make([]byte, 200)),
+		string(make([]byte, 500)),
+	}
+
+	for _, s := range testStrings {
+		expected := rapidhash.HashMicro([]byte(s))
+		got := rapidhash.HashStringMicro(s)
+		if got != expected {
+			t.Errorf("HashStringMicro(%q) = 0x%x, want 0x%x (len=%d)", s, got, expected, len(s))
+		}
+	}
+}
+
+// TestHashStringMicroWithSeedMatchesHashMicroWithSeed verifies seeded Micro variant.
+func TestHashStringMicroWithSeedMatchesHashMicroWithSeed(t *testing.T) {
+	testStrings := []string{
+		"",
+		"hello",
+		"The quick brown fox jumps over the lazy dog",
+		string(make([]byte, 500)),
+	}
+	seeds := []uint64{0, 1, 12345, 0xdeadbeef}
+
+	for _, s := range testStrings {
+		for _, seed := range seeds {
+			expected := rapidhash.HashMicroWithSeed([]byte(s), seed)
+			got := rapidhash.HashStringMicroWithSeed(s, seed)
+			if got != expected {
+				t.Errorf("HashStringMicroWithSeed(%q, %d) = 0x%x, want 0x%x", s, seed, got, expected)
+			}
+		}
+	}
+}
+
+// TestHashStringAllSizes tests all string functions across a range of sizes.
+func TestHashStringAllSizes(t *testing.T) {
+	// Test critical size boundaries
+	sizes := []int{0, 1, 2, 3, 4, 7, 8, 15, 16, 17, 32, 48, 49, 64, 80, 81, 112, 113, 200, 448, 449, 1000}
+
+	for _, size := range sizes {
+		data := make([]byte, size)
+		for i := range data {
+			data[i] = byte(i % 256)
+		}
+		s := string(data)
+
+		// Test all variants
+		if got, want := rapidhash.HashString(s), rapidhash.Hash(data); got != want {
+			t.Errorf("size %d: HashString = 0x%x, want 0x%x", size, got, want)
+		}
+		if got, want := rapidhash.HashStringNano(s), rapidhash.HashNano(data); got != want {
+			t.Errorf("size %d: HashStringNano = 0x%x, want 0x%x", size, got, want)
+		}
+		if got, want := rapidhash.HashStringMicro(s), rapidhash.HashMicro(data); got != want {
+			t.Errorf("size %d: HashStringMicro = 0x%x, want 0x%x", size, got, want)
+		}
+
+		// Test with seed
+		seed := uint64(12345)
+		if got, want := rapidhash.HashStringWithSeed(s, seed), rapidhash.HashWithSeed(data, seed); got != want {
+			t.Errorf("size %d: HashStringWithSeed = 0x%x, want 0x%x", size, got, want)
+		}
+		if got, want := rapidhash.HashStringNanoWithSeed(s, seed), rapidhash.HashNanoWithSeed(data, seed); got != want {
+			t.Errorf("size %d: HashStringNanoWithSeed = 0x%x, want 0x%x", size, got, want)
+		}
+		if got, want := rapidhash.HashStringMicroWithSeed(s, seed), rapidhash.HashMicroWithSeed(data, seed); got != want {
+			t.Errorf("size %d: HashStringMicroWithSeed = 0x%x, want 0x%x", size, got, want)
+		}
+	}
+}
