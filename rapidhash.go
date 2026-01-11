@@ -525,3 +525,44 @@ func hashMicroWithMixedSeed(data []byte, p unsafe.Pointer, length int, seed uint
 
 	return mix(a^secret7, b^secret1^uint64(i))
 }
+
+// stringToBytes converts a string to a byte slice without allocation.
+//
+// The returned slice shares memory with the string and must not be modified.
+func stringToBytes(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
+
+// HashString computes a 64-bit rapidhash of the input string using the default
+// seed (0).
+func HashString(s string) uint64 {
+	return Hash(stringToBytes(s))
+}
+
+// HashStringWithSeed computes a 64-bit rapidhash of the input string using the
+// provided seed.
+func HashStringWithSeed(s string, seed uint64) uint64 {
+	return HashWithSeed(stringToBytes(s), seed)
+}
+
+// HashStringNano computes a hash of the input string using the Nano variant.
+func HashStringNano(s string) uint64 {
+	return HashNano(stringToBytes(s))
+}
+
+// HashStringNanoWithSeed computes a hash of the input string using the Nano
+// variant with a custom seed.
+func HashStringNanoWithSeed(s string, seed uint64) uint64 {
+	return HashNanoWithSeed(stringToBytes(s), seed)
+}
+
+// HashStringMicro computes a hash of the input string using the Micro variant.
+func HashStringMicro(s string) uint64 {
+	return HashMicro(stringToBytes(s))
+}
+
+// HashStringMicroWithSeed computes a hash of the input string using the Micro
+// variant with a custom seed.
+func HashStringMicroWithSeed(s string, seed uint64) uint64 {
+	return HashMicroWithSeed(stringToBytes(s), seed)
+}

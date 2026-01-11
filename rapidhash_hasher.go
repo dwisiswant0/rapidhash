@@ -1,10 +1,14 @@
 package rapidhash
 
-import "hash"
+import (
+	"hash"
+	"io"
+)
 
 var _ hash.Hash = (*Hasher)(nil)
 var _ hash.Hash64 = (*Hasher)(nil)
 var _ hash.Hash32 = (*Hasher)(nil)
+var _ io.StringWriter = (*Hasher)(nil)
 
 // Hasher implements [hash.Hash32] and [hash.Hash64] for streaming hash computation.
 //
@@ -47,6 +51,15 @@ func (h *Hasher) Write(p []byte) (n int, err error) {
 	h.data = append(h.data, p...)
 
 	return len(p), nil
+}
+
+// WriteString adds more data to the running hash from a string.
+//
+// This method allows Hasher to implement [io.StringWriter].
+func (h *Hasher) WriteString(s string) (n int, err error) {
+	h.data = append(h.data, s...)
+
+	return len(s), nil
 }
 
 // Sum64 returns the current 64-bit hash value.
