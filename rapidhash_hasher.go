@@ -3,6 +3,7 @@ package rapidhash
 import (
 	"hash"
 	"io"
+	"reflect"
 )
 
 var _ hash.Hash = (*Hasher)(nil)
@@ -88,4 +89,14 @@ func (h *Hasher) Sum(b []byte) []byte {
 		byte(hash>>8),
 		byte(hash),
 	)
+}
+
+// WriteComparable adds a comparable value to the running hash.
+//
+// This is not compatible with [Hash] or [HashWithSeed] because it encodes type
+// information and traverses values via reflection; it also randomizes
+// floating-point NaNs (so results are not deterministic when v contains NaNs)
+// and hashes pointer-like values by address, making results process-specific.
+func (h *Hasher) WriteComparable(v any) {
+	h.data = appendComparableBytes(h.data, reflect.ValueOf(v))
 }

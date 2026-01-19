@@ -25,6 +25,13 @@
 //
 // For larger inputs, each variant produces different (but equally valid) hashes.
 //
+// The comparable hashing helpers ([HashComparable], [HashComparableWithSeed],
+// and [Hasher.WriteComparable]) use a different encoding strategy (type tagging
+// plus reflection traversal), so their outputs are not compatible with [Hash]
+// or [HashWithSeed]. They also randomize floating-point NaNs and hash
+// pointer-like values by address, which can make results non-deterministic or
+// process-specific.
+//
 // # Performance
 //
 // On modern x86-64 CPUs, typical performance is:
