@@ -174,11 +174,81 @@ make bench
 make bench -C benchmarks
 ```
 
+### Comparable Hash Comparison
+
+<details open>
+  <summary><code>benchstat</code></summary>
+
+  ```
+  goos: linux
+  goarch: amd64
+  pkg: benchmarks
+  cpu: AMD EPYC 7763 64-Core Processor                
+                  │ rapidhash.HashComparable │         maphash.Comparable          │
+                  │          sec/op          │   sec/op     vs base                │
+  Comparable/int-4                    33.50n ± 3%   43.37n ± 1%  +29.45% (p=0.000 n=10)
+  Comparable/uint64-4                 34.63n ± 0%   44.15n ± 1%  +27.49% (p=0.000 n=10)
+  Comparable/string-4                 51.58n ± 1%   58.87n ± 0%  +14.14% (p=0.000 n=10)
+  Comparable/bool-4                   23.70n ± 0%   27.15n ± 0%  +14.58% (p=0.000 n=10)
+  Comparable/uintptr-4                33.88n ± 0%   44.20n ± 2%  +30.44% (p=0.000 n=10)
+  Comparable/ptr-4                    24.88n ± 0%   33.35n ± 2%  +34.07% (p=0.000 n=10)
+  Comparable/ptr-nil-4                24.87n ± 0%   33.35n ± 0%  +34.10% (p=0.000 n=10)
+  Comparable/array-4                  124.3n ± 0%   162.9n ± 0%  +31.05% (p=0.000 n=10)
+  Comparable/struct-4                 181.1n ± 0%   252.8n ± 0%  +39.56% (p=0.000 n=10)
+  geomean                             44.39n        56.84n       +28.05%
+                  │ rapidhash.HashComparable │         maphash.Comparable          │
+                  │           B/op           │    B/op     vs base                 │
+  Comparable/int-4                   8.000 ± 0%     8.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/uint64-4                8.000 ± 0%     8.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/string-4                16.00 ± 0%     16.00 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/bool-4                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/uintptr-4               8.000 ± 0%     8.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/ptr-4                   0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/ptr-nil-4               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/array-4                 16.00 ± 0%     16.00 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/struct-4                32.00 ± 0%     32.00 ± 0%       ~ (p=1.000 n=10) ¹
+  geomean                                       ²               +0.00%                ²
+  ¹ all samples are equal
+  ² summaries must be >0 to compute geomean
+                  │ rapidhash.HashComparable │         maphash.Comparable          │
+                  │        allocs/op         │ allocs/op   vs base                 │
+  Comparable/int-4                   1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/uint64-4                1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/string-4                1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/bool-4                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/uintptr-4               1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/ptr-4                   0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/ptr-nil-4               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/array-4                 1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  Comparable/struct-4                1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+  geomean                                       ²               +0.00%                ²
+  ¹ all samples are equal
+  ² summaries must be >0 to compute geomean
+  ```
+</details>
+
+Across the benchmarked comparable types, **rapidhash** outperforms [`maphash`](https://pkg.go.dev/hash/maphash) in speed while matching its alloc behavior. Performance improvements differ by type, with notable gains for pointer-based and composite structures. Note that the std lib's [`maphash`](https://pkg.go.dev/hash/maphash) was tested using the `-tags=purego` flag, which uses the wyhash algorithm.
+
+Run benchmarks yourself:
+
+```bash
+make bench-comparable -C benchmarks
+```
+
 ## Variant Compatibility
 
 All three variants produce identical output for small inputs:
 * All match for inputs ≤ 48 bytes.
 * [`Hash`](https://pkg.go.dev/go.dw1.io/rapidhash#Hash) and [`HashMicro`](https://pkg.go.dev/go.dw1.io/rapidhash#HashMicro) match for inputs ≤ 80 bytes.
+
+The comparable hashing helpers ([`HashComparable`](https://pkg.go.dev/go.dw1.io/rapidhash#HashComparable),
+[`HashComparableWithSeed`](https://pkg.go.dev/go.dw1.io/rapidhash#HashComparableWithSeed), and
+[`Hasher.WriteComparable`](https://pkg.go.dev/go.dw1.io/rapidhash#Hasher.WriteComparable)) use a
+different encoding strategy (type tagging plus reflection traversal), so their outputs are not
+compatible with [`Hash`](https://pkg.go.dev/go.dw1.io/rapidhash#Hash) or
+[`HashWithSeed`](https://pkg.go.dev/go.dw1.io/rapidhash#HashWithSeed). They also randomize
+floating-point NaNs and hash pointer-like values by address, which can make results non-deterministic
+or process-specific.
 
 ## Thread Safety
 
